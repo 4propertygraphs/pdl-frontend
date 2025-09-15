@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    /* Light gray background */
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c4b5fd;
+    /* Softer purple color */
+    border-radius: 4px;
+    border: 2px solid #f3f4f6;
+    /* Matches track background for a gap effect */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a78bfa;
+    /* Slightly darker purple on hover */
+}
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
