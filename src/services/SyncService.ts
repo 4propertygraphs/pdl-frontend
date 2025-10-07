@@ -118,25 +118,74 @@ export class SyncService {
 
   static async syncPropertiesForAgency(agencyKey: string): Promise<void> {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const syncUrl = `${supabaseUrl}/functions/v1/sync-properties?key=${encodeURIComponent(agencyKey)}`;
+      // Fetch agency to get name
+      const { data: agency } = await supabase
+        .from('agencies')
+        .select('name, id')
+        .eq('unique_key', agencyKey)
+        .maybeSingle();
 
-      const response = await fetch(syncUrl, {
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'apikey': supabaseKey,
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error(`Failed to sync properties for ${agencyKey}: ${response.status}`, errorData);
+      if (!agency) {
+        console.error('Agency not found for key:', agencyKey);
         return;
       }
 
-      const result = await response.json();
-      console.log(`Synced ${result.inserted} properties for agency ${result.agency}`);
+      // Fetch properties directly from API
+      const apiUrl = `https://api.stefanmars.nl/api/properties?Key=${agencyKey}`;
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        console.error(`API returned ${response.status} for agency ${agency.name}`);
+        return;
+      }
+
+      const properties = await response.json();
+
+      if (!Array.isArray(properties) || properties.length === 0) {
+        console.log(`No properties found for ${agency.name}`);
+        return;
+      }
+
+      // Delete old properties for this agency
+      await supabase
+        .from('properties')
+        .delete()
+        .eq('agency_name', agency.name);
+
+      let inserted = 0;
+      let errors = 0;
+
+      // Insert new properties
+      for (const prop of properties) {
+        const propertyData = {
+          agency_agent_name: prop.Agent || 'Unknown',
+          agency_name: agency.name,
+          house_location: prop.CountyCityName || prop.ShortDescription || 'Unknown',
+          house_price: prop.Price || '0',
+          house_bedrooms: parseInt(prop.BedRooms) || 0,
+          house_bathrooms: parseInt(prop.BathRooms) || 0,
+          house_mt_squared: prop.FloorArea || '0',
+          house_extra_info_1: prop.Type || null,
+          house_extra_info_2: prop.Status || null,
+          house_extra_info_3: prop.ShortDescription || null,
+          house_extra_info_4: null,
+          agency_image_url: null,
+          images_url_house: prop.PrimaryImage || null,
+        };
+
+        const { error } = await supabase
+          .from('properties')
+          .insert(propertyData);
+
+        if (error) {
+          console.error('Insert error:', error);
+          errors++;
+        } else {
+          inserted++;
+        }
+      }
+
+      console.log(`Synced ${inserted} properties for ${agency.name} (${errors} errors)`);
     } catch (error) {
       console.error('Failed to sync properties:', error);
     }
@@ -161,13 +210,16 @@ export class SyncService {
     for (const agency of agencies) {
       if (agency.unique_key) {
         try {
+          console.log(`Syncing properties for agency ${succeeded + 1}/${agencies.length}...`);
           await this.syncPropertiesForAgency(agency.unique_key);
           succeeded++;
-          // Add 2 second delay between requests to avoid overwhelming the API
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Add 5 second delay between requests to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 5000));
         } catch (error) {
           console.error(`Failed to sync properties for agency ${agency.unique_key}:`, error);
           failed++;
+          // Still wait a bit before next attempt even on failure
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       }
     }
