@@ -117,27 +117,103 @@ export class SyncService {
 
   static async syncPropertiesForAgency(agencyKey: string): Promise<void> {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const syncUrl = `${supabaseUrl}/functions/v1/sync-properties?key=${encodeURIComponent(agencyKey)}`;
+      const { data: agency } = await supabase
+        .from('agencies')
+        .select('name, id')
+        .eq('unique_key', agencyKey)
+        .maybeSingle();
 
-      const response = await fetch(syncUrl, {
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'apikey': supabaseKey,
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error(`Failed to sync properties for ${agencyKey}: ${response.status}`, errorData);
+      if (!agency) {
+        console.error('Agency not found for key:', agencyKey);
         return;
       }
 
-      const result = await response.json();
-      console.log(`Synced ${result.inserted} properties for agency ${result.agency}`);
+      const apiUrl = 'https://api.stefanmars.nl/api/properties';
+
+      let response;
+      let retries = 3;
+      let lastError;
+
+      for (let i = 0; i < retries; i++) {
+        try {
+          response = await fetch(apiUrl, {
+            headers: {
+              'key': agencyKey,
+            },
+            signal: AbortSignal.timeout(30000),
+          });
+
+          if (response.ok) {
+            break;
+          }
+
+          if (response.status === 404 || response.status === 401 || response.status === 403) {
+            throw new Error(`API returned ${response.status}: Invalid or missing API key`);
+          }
+
+          lastError = new Error(`API returned ${response.status}`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        } catch (error) {
+          lastError = error;
+          if (i < retries - 1) {
+            console.log(`Retry ${i + 1}/${retries - 1} for agency ${agency.name}`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+          }
+        }
+      }
+
+      if (!response || !response.ok) {
+        throw lastError || new Error('Failed to fetch properties after retries');
+      }
+
+      const properties = await response.json();
+
+      if (!Array.isArray(properties) || properties.length === 0) {
+        console.log(`No properties found for ${agency.name}`);
+        return;
+      }
+
+      await supabase
+        .from('properties')
+        .delete()
+        .eq('agency_name', agency.name);
+
+      let inserted = 0;
+      let errors = 0;
+
+      for (const prop of properties) {
+        const propertyData = {
+          agency_agent_name: prop.Agent || 'Unknown',
+          agency_name: agency.name,
+          house_location: prop.CountyCityName || prop.ShortDescription || 'Unknown',
+          house_price: prop.Price || '0',
+          house_bedrooms: parseInt(prop.BedRooms) || 0,
+          house_bathrooms: parseInt(prop.BathRooms) || 0,
+          house_mt_squared: prop.FloorArea || '0',
+          house_extra_info_1: prop.Type || null,
+          house_extra_info_2: prop.Status || null,
+          house_extra_info_3: prop.ShortDescription || null,
+          house_extra_info_4: null,
+          agency_image_url: null,
+          images_url_house: prop.PrimaryImage || null,
+        };
+
+        const { error } = await supabase
+          .from('properties')
+          .insert(propertyData);
+
+        if (error) {
+          console.error('Insert error:', error);
+          errors++;
+        } else {
+          inserted++;
+        }
+      }
+
+      console.log(`Synced ${inserted} properties for ${agency.name} (${errors} errors)`);
     } catch (error) {
       console.error('Failed to sync properties:', error);
+      throw error;
     }
   }
 
