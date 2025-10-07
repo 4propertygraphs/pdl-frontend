@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export class SyncService {
   private static syncInterval: number | null = null;
@@ -11,6 +12,10 @@ export class SyncService {
     try {
       const response = await fetch(`${SUPABASE_URL}/functions/v1/sync-agencies`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -33,6 +38,10 @@ export class SyncService {
         `${SUPABASE_URL}/functions/v1/sync-properties?key=${agencyKey}`,
         {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
         }
       );
 
