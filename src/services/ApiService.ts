@@ -98,10 +98,10 @@ class ApiService {
         return { data: data.map(agency => ({
             id: agency.id,
             name: agency.name,
-            address: `${agency.address1 || ''} ${agency.address2 || ''}`.trim(),
+            address: agency.address || '',
             logo: agency.logo,
             site_name: agency.site_name,
-            acquaint_site_prefix: agency.site_prefix,
+            acquaint_site_prefix: agency.acquaint_site_prefix,
             myhome_api_key: agency.myhome_api_key,
             myhome_group_id: agency.myhome_group_id,
             daft_api_key: agency.daft_api_key,
@@ -110,9 +110,9 @@ class ApiService {
             office_name: agency.office_name,
             ghl_id: agency.ghl_id,
             whmcs_id: agency.whmcs_id,
-            primary_source: null,
-            total_properties: 0,
-            site: agency.site_name || ''
+            primary_source: agency.primary_source,
+            total_properties: agency.total_properties || 0,
+            site: agency.site || ''
         })) };
     }
 
