@@ -20,17 +20,17 @@ class ApiService {
     // URL utility functions
     static urls = {
 
-        properties: () => '/api/properties',
-        GetMyHome: () => '/api/myhome',
-        GetAcquaint: () => '/api/acquaint',
-        GetDaft: () => '/api/daft',
-        field_mappings: () => '/api/field_mappings',
+        properties: () => '/properties',
+        GetMyHome: () => '/myhome',
+        GetAcquaint: () => '/acquaint',
+        GetDaft: () => '/daft',
+        field_mappings: () => '/field_mappings',
 
-        agencies: () => '/api/agencies',
-        agency: () => '/api/agency/',
-        verifyToken: () => '/api/verify_token',
-        login: () => '/api/login',
-        UpdateAgency: () => '/api/agencies/',
+        agencies: () => '/agencies',
+        agency: () => '/agency/',
+        verifyToken: () => '/verify_token',
+        login: () => '/login',
+        UpdateAgency: () => '/agencies/',
     };
 
 
@@ -242,7 +242,7 @@ class ApiService {
 
     // Add this method to fetch all Daft properties
     getAllDaftProperties(apiKey: string) {
-        return this.directApi.get('/api/daft/all', {
+        return this.directApi.get('/daft/all', {
             headers: {
                 'apiKey': apiKey
             }
