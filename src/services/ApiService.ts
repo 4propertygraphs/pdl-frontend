@@ -46,9 +46,20 @@ class ApiService {
             }
         });
 
-        const properties = response.data;
+        console.log('Raw properties response:', response.data);
+
+        let properties = response.data;
+
+        if (properties && typeof properties === 'object' && !Array.isArray(properties)) {
+            if (Array.isArray(properties.data)) {
+                properties = properties.data;
+            } else if (properties.properties && Array.isArray(properties.properties)) {
+                properties = properties.properties;
+            }
+        }
 
         if (!Array.isArray(properties)) {
+            console.error('Invalid properties response format:', response.data);
             throw new Error('Invalid response format');
         }
 
@@ -105,9 +116,20 @@ class ApiService {
             }
         });
 
-        const agencies = response.data;
+        console.log('Raw agencies response:', response.data);
+
+        let agencies = response.data;
+
+        if (agencies && typeof agencies === 'object' && !Array.isArray(agencies)) {
+            if (Array.isArray(agencies.data)) {
+                agencies = agencies.data;
+            } else if (agencies.agencies && Array.isArray(agencies.agencies)) {
+                agencies = agencies.agencies;
+            }
+        }
 
         if (!Array.isArray(agencies)) {
+            console.error('Invalid agencies response format:', response.data);
             throw new Error('Invalid response format');
         }
 
