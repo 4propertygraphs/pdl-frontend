@@ -11,7 +11,6 @@ import Nopage from './pages/Nopage.tsx';
 import apiService from './services/ApiService';
 import Agencies from './pages/Agencies.tsx';
 import FieldMappings from './pages/FieldMappings';
-import { SyncService } from './services/SyncService';
 
 // PrivateRoute component
 const PrivateRoute = ({ element }: { element: React.ReactElement }) => {
@@ -52,37 +51,6 @@ const PrivateRoute = ({ element }: { element: React.ReactElement }) => {
 
 const App = () => {
   const token = localStorage.getItem('token');
-  const [isInitializing, setIsInitializing] = useState(true);
-
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        await SyncService.checkAndInitialize();
-        SyncService.startAutoSync(5);
-      } catch (error) {
-        console.error('Failed to initialize:', error);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-
-    initialize();
-
-    return () => {
-      SyncService.stopAutoSync();
-    };
-  }, []);
-
-  if (isInitializing) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-700 dark:text-gray-300">Loading data...</p>
-        </div>
-      </div>
-    );
-  }
 
   let basename = import.meta.env.VITE_REACT_APP_FILE_LOCATION || '/';
   if (!basename.startsWith('/')) {

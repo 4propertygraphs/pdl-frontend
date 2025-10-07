@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import AgencyModal from '../components/modals/AgencyModal';
-import CreateAgencyModal from '../components/modals/CreateAgencyModal'; // Import the new modal
+import CreateAgencyModal from '../components/modals/CreateAgencyModal';
 import apiService from '../services/ApiService';
 import { Agency } from '../interfaces/Models';
 import { useNavigate } from 'react-router-dom';
 import SearchBarModal from '../components/SearchBar';
-import { SyncService } from '../services/SyncService';
 
 type Source = 'acquaint' | 'daft' | 'myhome';
 type FilterLogic = 'AND' | 'OR' | 'NOT';
@@ -324,8 +323,6 @@ function Agencies() {
     const [recountError, setRecountError] = useState<string | null>(null);
 
     // Add state for sync properties button
-    const [syncPropertiesLoading, setSyncPropertiesLoading] = useState(false);
-    const [syncPropertiesError, setSyncPropertiesError] = useState<string | null>(null);
 
     const handleRecountAll = async () => {
         if (!window.confirm("Are you sure you want to recount all agencies' properties?")) {
@@ -348,23 +345,6 @@ function Agencies() {
         }
     };
 
-    const handleSyncProperties = async () => {
-        if (!window.confirm("This will sync all properties from the API. This may take several minutes. Continue?")) {
-            return;
-        }
-        setSyncPropertiesError(null);
-        setSyncPropertiesLoading(true);
-        try {
-            await SyncService.syncAllProperties();
-            await refreshAgencies();
-            alert('Properties sync completed! Check console for details.');
-        } catch (error: any) {
-            setSyncPropertiesError("Sync completed with errors. Check console.");
-            console.error('Error syncing properties:', error);
-        } finally {
-            setSyncPropertiesLoading(false);
-        }
-    };
 
     // Only define handleSearchChange if logged in
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -481,21 +461,6 @@ function Agencies() {
                                             Recount All
                                         </button>
 
-                                        {/* Sync Properties Button */}
-                                        {syncPropertiesError && (
-                                            <span className="ml-4 text-xs text-red-500 font-normal">{syncPropertiesError}</span>
-                                        )}
-                                        <button
-                                            className="ml-4 px-2 py-1 text-xs rounded bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800"
-                                            onClick={handleSyncProperties}
-                                            disabled={syncPropertiesLoading}
-                                            title="Sync all properties from API"
-                                        >
-                                            {syncPropertiesLoading ? (
-                                                <span className="inline-block w-4 h-4 mr-1 align-middle border-2 border-green-400 border-t-transparent rounded-full animate-spin"></span>
-                                            ) : null}
-                                            Sync Properties
-                                        </button>
 
                                         {/* Show refresh error if present */}
                                         {refreshError && (
