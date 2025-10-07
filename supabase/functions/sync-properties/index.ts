@@ -50,10 +50,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Fetch properties from API
-    const apiUrl = `https://api.stefanmars.nl/api/properties?Key=${agencyKey}`;
+    // Fetch properties from API using key header
+    const apiUrl = 'https://api.stefanmars.nl/api/properties';
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: {
+        'key': agencyKey,
+      }
+    });
 
     if (!response.ok) {
       throw new Error(`API returned ${response.status}: ${await response.text()}`);
