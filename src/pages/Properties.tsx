@@ -159,28 +159,51 @@ function Properties() {
 
   useEffect(() => {
     if (!agencyKey) return;
-    setIsLoading(true); // Ensure loading state is set to true before fetching
+
+    const cacheKey = `properties_${agencyKey}`;
+    const cached = localStorage.getItem(cacheKey);
+
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        const cacheAge = Date.now() - cachedData.timestamp;
+
+        if (cacheAge < 5 * 60 * 1000) {
+          setOriginalProperties(cachedData.data);
+          setProperties(cachedData.data);
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.error('Cache parse error:', e);
+      }
+    }
+
+    setIsLoading(true);
     apiService.getProperties(agencyKey)
       .then(propertiesResponse => {
-        // Transform properties - set New Home for those with ParentId
         const transformedProperties = propertiesResponse.data.map((property: Property) => {
           if (property.ParentId) {
             return {
               ...property,
-              Propertymarket: 'New Home' // Replace existing Propertymarket value
+              Propertymarket: 'New Home'
             };
           }
           return property;
         });
 
-        setOriginalProperties(transformedProperties); // Store transformed properties
-        setProperties(transformedProperties); // Initialize displayed properties with transformed data
+        localStorage.setItem(cacheKey, JSON.stringify({
+          data: transformedProperties,
+          timestamp: Date.now()
+        }));
+
+        setOriginalProperties(transformedProperties);
+        setProperties(transformedProperties);
       })
       .catch(error => {
         console.error('Error fetching data:', error);
       })
       .finally(() => {
-        setIsLoading(false); // Ensure loading state is set to false after fetching
+        setIsLoading(false);
       });
   }, [agencyKey]);
 
@@ -502,28 +525,35 @@ function Properties() {
 
 
   const refreshProperties = async () => {
-    setIsLoading(true); // Set loading state to true
+    setIsLoading(true);
     try {
-      console.log('Refreshing properties with agencyKey:', agencyKey); // Debug log
+      const cacheKey = `properties_${agencyKey}`;
+      localStorage.removeItem(cacheKey);
+
+      console.log('Refreshing properties with agencyKey:', agencyKey);
       const propertiesResponse = await apiService.getProperties(agencyKey || '');
 
-      // Transform properties - set New Home for those with ParentId
       const transformedProperties = propertiesResponse.data.map((property: Property) => {
         if (property.ParentId) {
           return {
             ...property,
-            Propertymarket: 'New Home' // Replace existing Propertymarket value
+            Propertymarket: 'New Home'
           };
         }
         return property;
       });
 
-      setOriginalProperties(transformedProperties); // Update original properties with transformed data
-      setProperties(transformedProperties); // Update displayed properties with transformed data
+      localStorage.setItem(cacheKey, JSON.stringify({
+        data: transformedProperties,
+        timestamp: Date.now()
+      }));
+
+      setOriginalProperties(transformedProperties);
+      setProperties(transformedProperties);
     } catch (error) {
       console.error('Error refreshing properties:', error);
     } finally {
-      setIsLoading(false); // Set loading state to false
+      setIsLoading(false);
     }
   };
 
