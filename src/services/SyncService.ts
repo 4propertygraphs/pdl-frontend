@@ -1,60 +1,162 @@
 import { supabase } from '../lib/supabase';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+interface Agency {
+  Name: string;
+  OfficeName?: string;
+  Address1?: string;
+  Address2?: string;
+  Logo?: string;
+  Site?: string;
+  AcquiantCustomer?: {
+    SiteName?: string;
+    SitePrefix?: string;
+    FourPMBranchID?: number;
+  };
+  MyhomeApi?: {
+    ApiKey?: string;
+    GroupID?: number;
+  };
+  DaftApiKey?: string;
+  Key?: string;
+}
 
 export class SyncService {
   private static syncInterval: number | null = null;
   private static lastSync: Date | null = null;
   private static isInitialized = false;
+  private static isSyncing = false;
+
+  private static removeDuplicateItems(items: Agency[], key: keyof Agency): Agency[] {
+    const seen = new Set();
+    const result: Agency[] = [];
+    for (const item of items) {
+      const keyValue = item[key];
+      if (keyValue && !seen.has(keyValue)) {
+        seen.add(keyValue);
+        result.push(item);
+      }
+    }
+    return result;
+  }
 
   static async syncAgencies(): Promise<void> {
+    if (this.isSyncing) {
+      console.log('Sync already in progress, skipping...');
+      return;
+    }
+
+    this.isSyncing = true;
     try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/sync-agencies`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const apiUrl = "https://api2.4pm.ie/api/Agency/GetAgency?Key=RDlaeFVPN004a0hvJTJmWUJIQTN3TVdnJTNkJTNk0";
+      const response = await fetch(apiUrl);
 
       if (!response.ok) {
-        throw new Error(`Sync failed: ${response.status}`);
+        throw new Error(`API returned ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log('Agencies synced:', result);
+      const data: Agency[] = await response.json();
+      const uniqueData = this.removeDuplicateItems(data, "Name");
+
+      let inserted = 0;
+      let updated = 0;
+
+      for (const agency of uniqueData) {
+        const acquiant = agency.AcquiantCustomer || {};
+        const myhome = agency.MyhomeApi || {};
+
+        const agencyData = {
+          name: agency.Name,
+          office_name: agency.OfficeName || null,
+          address1: agency.Address1 || '',
+          address2: agency.Address2 || null,
+          logo: agency.Logo || null,
+          site_name: acquiant.SiteName || null,
+          site_prefix: acquiant.SitePrefix || null,
+          daft_api_key: agency.DaftApiKey || null,
+          fourpm_branch_id: acquiant.FourPMBranchID || null,
+          myhome_api_key: myhome.ApiKey || null,
+          myhome_group_id: myhome.GroupID || null,
+          unique_key: agency.Key || null,
+        };
+
+        const { data: existing } = await supabase
+          .from('agencies')
+          .select('id')
+          .eq('unique_key', agencyData.unique_key)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('agencies')
+            .update(agencyData)
+            .eq('id', existing.id);
+          updated++;
+        } else {
+          await supabase
+            .from('agencies')
+            .insert(agencyData);
+          inserted++;
+        }
+      }
+
+      console.log(`Agencies synced: ${inserted} new, ${updated} updated`);
       this.lastSync = new Date();
-      return result;
     } catch (error) {
       console.error('Failed to sync agencies:', error);
-      throw error;
+    } finally {
+      this.isSyncing = false;
     }
   }
 
   static async syncPropertiesForAgency(agencyKey: string): Promise<void> {
     try {
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/sync-properties?key=${agencyKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const apiUrl = `https://api2.4pm.ie/api/properties?Key=${agencyKey}`;
+      const response = await fetch(apiUrl);
 
       if (!response.ok) {
-        throw new Error(`Sync failed: ${response.status}`);
+        console.error(`Failed to fetch properties for ${agencyKey}: ${response.status}`);
+        return;
       }
 
-      const result = await response.json();
-      console.log('Properties synced:', result);
-      return result;
+      const properties = await response.json();
+
+      if (!Array.isArray(properties) || properties.length === 0) {
+        return;
+      }
+
+      const { data: agency } = await supabase
+        .from('agencies')
+        .select('name')
+        .eq('unique_key', agencyKey)
+        .maybeSingle();
+
+      if (!agency) {
+        return;
+      }
+
+      for (const property of properties) {
+        const propertyData = {
+          agency_name: agency.name,
+          house_location: property.Address || '',
+          house_price: property.Price || 0,
+          house_bedrooms: property.BedRooms || 0,
+          house_bathrooms: property.BathRooms || 0,
+          images_url_house: property.PrimaryImage || null,
+          house_extra_info_1: property.Type || null,
+          house_extra_info_2: property.Status || null,
+          house_extra_info_3: property.ShortDescription || null,
+          agency_agent_name: property.Agent || null,
+        };
+
+        await supabase
+          .from('properties')
+          .upsert(propertyData, {
+            onConflict: 'agency_name,house_location',
+            ignoreDuplicates: false
+          });
+      }
     } catch (error) {
       console.error('Failed to sync properties:', error);
-      throw error;
     }
   }
 
@@ -106,20 +208,21 @@ export class SyncService {
     this.isInitialized = true;
   }
 
-  static startAutoSync(intervalHours: number = 1): void {
+  static startAutoSync(intervalMinutes: number = 5): void {
     if (this.syncInterval) {
       this.stopAutoSync();
     }
 
-    const intervalMs = intervalHours * 60 * 60 * 1000;
-
-    this.syncAll();
+    const intervalMs = intervalMinutes * 60 * 1000;
 
     this.syncInterval = window.setInterval(() => {
-      this.syncAll();
+      console.log('Background sync running...');
+      this.syncAll().catch(err => {
+        console.error('Background sync error:', err);
+      });
     }, intervalMs);
 
-    console.log(`Auto-sync started: every ${intervalHours} hour(s)`);
+    console.log(`Auto-sync started: every ${intervalMinutes} minute(s)`);
   }
 
   static stopAutoSync(): void {

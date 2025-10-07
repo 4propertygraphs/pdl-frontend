@@ -58,7 +58,7 @@ const App = () => {
     const initialize = async () => {
       try {
         await SyncService.checkAndInitialize();
-        SyncService.startAutoSync(1);
+        SyncService.startAutoSync(5);
       } catch (error) {
         console.error('Failed to initialize:', error);
       } finally {
