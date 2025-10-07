@@ -16,12 +16,13 @@ Deno.serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
-    const path = url.searchParams.get('path') || '';
+    const pathname = url.pathname.replace('/api-proxy', '');
+    const search = url.search;
     const method = req.method;
 
-    console.log('Incoming request:', { method, path, url: req.url });
+    console.log('Incoming request:', { method, pathname, search, url: req.url });
 
-    const apiUrl = `https://api.stefanmars.nl${path}`;
+    const apiUrl = `https://api.stefanmars.nl/api${pathname}${search}`;
     console.log('Target API URL:', apiUrl);
 
     const headers: Record<string, string> = {

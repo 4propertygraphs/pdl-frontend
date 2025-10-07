@@ -6,9 +6,13 @@ class ApiService {
     private directApi: AxiosInstance;
 
     constructor() {
-        const proxyBaseUrl = import.meta.env.VITE_PROXY_URL || 'http://localhost:3001/api';
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const proxyBaseUrl = `${supabaseUrl}/functions/v1/api-proxy`;
         this.directApi = axios.create({
             baseURL: proxyBaseUrl,
+            headers: {
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            }
         });
     }
 
