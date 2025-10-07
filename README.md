@@ -24,13 +24,9 @@ Dashboard interface to audit properties in multiple APIs
    ```
 
 3. **Configure environment variables**
-   - Copy `.env.example` to `.env` and update values as needed.
-
-```
-   VITE_REACT_APP_API_URL= Backend API URL (e.g., http://localhost:3000/api)
-   VITE_REACT_APP_PRODUCTION= True or false
-   VITE_REACT_APP_FILE_LOCATION= Location of project in web server (e.g., /property-interface) leave empty if hosted at root
-```
+   - The `.env` file is already configured with Supabase credentials
+   - A backup exists in `.env.example` with the same values
+   - **DO NOT DELETE** these files as they contain the database connection settings
 4. **Run the development server**
    ```bash
    npm run dev
