@@ -8,9 +8,10 @@ import Sidebar from './components/Sidebar.tsx';
 import Properties from './pages/Properties.tsx';
 import Login from './pages/Login.tsx';
 import Nopage from './pages/Nopage.tsx';
-import apiService from './services/ApiService'; // Gebruik de instantie
+import apiService from './services/ApiService';
 import Agencies from './pages/Agencies.tsx';
-import FieldMappings from './pages/FieldMappings'; // Add this import
+import FieldMappings from './pages/FieldMappings';
+import { SyncService } from './services/SyncService';
 
 // PrivateRoute component
 const PrivateRoute = ({ element }: { element: React.ReactElement }) => {
@@ -50,15 +51,20 @@ const PrivateRoute = ({ element }: { element: React.ReactElement }) => {
 };
 
 const App = () => {
-  const token = localStorage.getItem('token'); // Fix: get token directly
+  const token = localStorage.getItem('token');
 
-  // Get basename from env
+  useEffect(() => {
+    SyncService.startAutoSync(1);
+
+    return () => {
+      SyncService.stopAutoSync();
+    };
+  }, []);
+
   let basename = import.meta.env.VITE_REACT_APP_FILE_LOCATION || '/';
   if (!basename.startsWith('/')) {
     basename = '/' + basename;
   }
-
-  // Logout component
 
   return (
     <StrictMode>

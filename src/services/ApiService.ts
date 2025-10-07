@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { Agency } from '../interfaces/Models';
 import { mockAgencies, mockFieldMappings, getPropertiesByAgencyKey } from '../data/mockData';
+import { supabase } from '../lib/supabase';
 
 class ApiService {
     private api: AxiosInstance;
@@ -44,27 +45,77 @@ class ApiService {
 
 
 
-    getProperties(key: string) {
+    async getProperties(key: string) {
         if (this.useMockData) {
             return Promise.resolve({ data: getPropertiesByAgencyKey(key) });
         }
-        return this.api.get(`?path=${ApiService.urls.properties()}`, {
-            headers: {
-                'key': key
-            }
-        });
+
+        const { data: agency } = await supabase
+            .from('agencies')
+            .select('name')
+            .eq('unique_key', key)
+            .maybeSingle();
+
+        if (!agency) {
+            return this.api.get(`?path=${ApiService.urls.properties()}`, {
+                headers: { 'key': key }
+            });
+        }
+
+        const { data, error } = await supabase
+            .from('properties')
+            .select('*')
+            .eq('agency_name', agency.name);
+
+        if (error) throw error;
+
+        return { data: data.map(prop => ({
+            ParentId: prop.id.toString(),
+            PrimaryImage: prop.images_url_house,
+            Type: prop.house_extra_info_1,
+            Status: prop.house_extra_info_2,
+            ShortDescription: prop.house_extra_info_3,
+            Price: prop.house_price,
+            Agent: prop.agency_agent_name,
+            Office: prop.agency_name,
+            CountyCityName: prop.house_location,
+            BedRooms: prop.house_bedrooms,
+            BathRooms: prop.house_bathrooms,
+            FloorArea: prop.house_mt_squared,
+        })) };
     }
 
-    getAgencies() {
+    async getAgencies() {
         if (this.useMockData) {
             return Promise.resolve({ data: mockAgencies });
         }
-        const token = this.getAuthToken();
-        return this.api.get(`?path=${ApiService.urls.agencies()}`, {
-            headers: {
-                'token': token
-            }
-        });
+
+        const { data, error } = await supabase
+            .from('agencies')
+            .select('*')
+            .order('name');
+
+        if (error) throw error;
+
+        return { data: data.map(agency => ({
+            id: agency.id,
+            name: agency.name,
+            address: `${agency.address1 || ''} ${agency.address2 || ''}`.trim(),
+            logo: agency.logo,
+            site_name: agency.site_name,
+            acquaint_site_prefix: agency.site_prefix,
+            myhome_api_key: agency.myhome_api_key,
+            myhome_group_id: agency.myhome_group_id,
+            daft_api_key: agency.daft_api_key,
+            fourpm_branch_id: agency.fourpm_branch_id,
+            unique_key: agency.unique_key,
+            office_name: agency.office_name,
+            ghl_id: agency.ghl_id,
+            whmcs_id: agency.whmcs_id,
+            primary_source: null,
+            total_properties: 0,
+            site: agency.site_name || ''
+        })) };
     }
 
     getAgency(key: string) {
