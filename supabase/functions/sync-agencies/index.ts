@@ -53,10 +53,17 @@ Deno.serve(async (req: Request) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch agencies from 4PM API
-    const apiUrl = "https://api2.4pm.ie/api/Agency/GetAgency?Key=RDlaeFVPN004a0hvJTJmWUJIQTN3TVdnJTNkJTNk0";
-    const response = await fetch(apiUrl);
-    
+    // Fetch agencies from API
+    // TODO: Add your API token here
+    const apiToken = 'YOUR_API_TOKEN_HERE';
+    const apiUrl = 'https://api.stefanmars.nl/api/agencies';
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        'token': apiToken,
+      }
+    });
+
     if (!response.ok) {
       throw new Error(`API returned ${response.status}`);
     }
