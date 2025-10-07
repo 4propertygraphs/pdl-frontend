@@ -6,8 +6,9 @@ class ApiService {
     private directApi: AxiosInstance;
 
     constructor() {
+        const proxyBaseUrl = import.meta.env.VITE_PROXY_URL || 'http://localhost:3001/api';
         this.directApi = axios.create({
-            baseURL: 'https://api.stefanmars.nl',
+            baseURL: proxyBaseUrl,
         });
     }
 
