@@ -98,10 +98,14 @@ class ApiService {
 
     async getAgencies() {
         try {
-            const apiToken = import.meta.env.VITE_API_TOKEN;
+            const token = this.getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
             const response = await fetch('https://api.stefanmars.nl/api/agencies', {
                 headers: {
-                    'token': apiToken,
+                    'token': token,
                 },
             });
 
