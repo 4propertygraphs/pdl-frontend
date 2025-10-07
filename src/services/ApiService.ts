@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { Agency } from '../interfaces/Models';
 import { supabase } from '../lib/supabase';
+import { cacheService } from './CacheService';
 
 class ApiService {
     private api: AxiosInstance;
@@ -99,6 +100,10 @@ class ApiService {
             throw new Error('No authentication token found');
         }
 
+        const cacheKey = 'agencies';
+        const cached = cacheService.get<{ data: any[] }>(cacheKey);
+        if (cached) return cached;
+
         const response = await this.api.get(`?path=${ApiService.urls.agencies()}`, {
             headers: {
                 'token': token
@@ -111,7 +116,7 @@ class ApiService {
             throw new Error('Invalid response format');
         }
 
-        return {
+        const result = {
             data: agencies.map(agency => ({
                 id: agency.Id || agency.id,
                 name: agency.Name || agency.name,
@@ -133,6 +138,9 @@ class ApiService {
                 site: agency.Site || agency.site || ''
             }))
         };
+
+        cacheService.set(cacheKey, result, 5 * 60 * 1000);
+        return result;
     }
 
     getAgency(key: string) {
