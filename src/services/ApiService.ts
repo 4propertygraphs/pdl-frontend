@@ -6,9 +6,13 @@ class ApiService {
     private directApi: AxiosInstance;
 
     constructor() {
-        const apiBaseUrl = 'https://api.stefanmars.nl/api';
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const proxyBaseUrl = `${supabaseUrl}/functions/v1/api-proxy`;
         this.directApi = axios.create({
-            baseURL: apiBaseUrl,
+            baseURL: proxyBaseUrl,
+            headers: {
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            }
         });
     }
 
