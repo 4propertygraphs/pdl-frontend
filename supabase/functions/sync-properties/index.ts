@@ -50,24 +50,13 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Fetch properties from 4PM API with timeout
-    const apiUrl = `https://api2.4pm.ie/api/property/json?Key=${agencyKey}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    // Fetch properties from API
+    const apiUrl = `https://api.stefanmars.nl/api/properties?Key=${agencyKey}`;
 
-    let response;
-    try {
-      response = await fetch(apiUrl, {
-        signal: controller.signal,
-      });
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      throw new Error(`API connection failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
-    }
-    clearTimeout(timeoutId);
+    const response = await fetch(apiUrl);
 
     if (!response.ok) {
-      throw new Error(`API returned ${response.status}`);
+      throw new Error(`API returned ${response.status}: ${await response.text()}`);
     }
 
     const properties = await response.json();
