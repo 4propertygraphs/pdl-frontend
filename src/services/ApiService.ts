@@ -12,9 +12,6 @@ class ApiService {
         const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
         this.proxyUrl = `${supabaseUrl}/functions/v1/api-proxy`;
 
-        console.log('Supabase URL:', supabaseUrl);
-        console.log('Proxy URL:', this.proxyUrl);
-
         this.api = axios.create({
             baseURL: this.proxyUrl,
             headers: {
