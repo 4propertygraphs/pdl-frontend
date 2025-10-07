@@ -3,20 +3,11 @@ import { Agency } from '../interfaces/Models';
 import { cacheService } from './CacheService';
 
 class ApiService {
-    private api: AxiosInstance;
-    private proxyUrl: string;
+    private directApi: AxiosInstance;
 
     constructor() {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        this.proxyUrl = `${supabaseUrl}/functions/v1/api-proxy`;
-
-        this.api = axios.create({
-            baseURL: this.proxyUrl,
-            headers: {
-                'Authorization': `Bearer ${supabaseKey}`,
-                'apikey': supabaseKey,
-            },
+        this.directApi = axios.create({
+            baseURL: 'https://api.stefanmars.nl',
         });
     }
 
@@ -44,7 +35,7 @@ class ApiService {
 
 
     async getProperties(key: string) {
-        const response = await this.api.get(`?path=${ApiService.urls.properties()}`, {
+        const response = await this.directApi.get(ApiService.urls.properties(), {
             headers: {
                 'key': key
             }
@@ -103,29 +94,15 @@ class ApiService {
         const cached = cacheService.get<{ data: any[] }>(cacheKey);
         if (cached) return cached;
 
-        const response = await this.api.get(`?path=${ApiService.urls.agencies()}`, {
+        const response = await this.directApi.get(ApiService.urls.agencies(), {
             headers: {
                 'token': token
             }
         });
 
-        console.log('Raw response:', response);
-        console.log('Response data type:', typeof response.data);
-        console.log('Response data:', response.data);
-
-        let agencies = response.data;
-
-        if (typeof agencies === 'string') {
-            try {
-                agencies = JSON.parse(agencies);
-            } catch (e) {
-                console.error('Failed to parse agencies JSON:', e);
-                throw new Error('Invalid JSON response from API');
-            }
-        }
+        const agencies = response.data;
 
         if (!Array.isArray(agencies)) {
-            console.error('Agencies is not an array:', agencies);
             throw new Error('Invalid response format');
         }
 
@@ -157,7 +134,7 @@ class ApiService {
     }
 
     getAgency(key: string) {
-        return this.api.get(ApiService.urls.agency(), {
+        return this.directApi.get(ApiService.urls.agency(), {
             headers: {
                 'key': key
             }
@@ -165,7 +142,7 @@ class ApiService {
     }
 
     verifyToken(token: string) {
-        return this.api.get(ApiService.urls.verifyToken(), {
+        return this.directApi.get(ApiService.urls.verifyToken(), {
             headers: {
                 'token': token
             }
@@ -173,23 +150,23 @@ class ApiService {
     }
 
     login(email: string, password: string) {
-        return this.api.post(`?path=${ApiService.urls.login()}`, { email, password });
+        return this.directApi.post(ApiService.urls.login(), { email, password });
     }
 
 
     getMyHome(apiKey: string, Listreff: string) {
-        return this.api.get(`?path=${ApiService.urls.GetMyHome()}?key=${apiKey}&id=${Listreff}`);
+        return this.directApi.get(`${ApiService.urls.GetMyHome()}?key=${apiKey}&id=${Listreff}`);
     }
     getDaft(apiKey: string, Listreff: string) {
-        return this.api.get(`?path=${ApiService.urls.GetDaft()}?key=${apiKey}&id=${Listreff}`);
+        return this.directApi.get(`${ApiService.urls.GetDaft()}?key=${apiKey}&id=${Listreff}`);
     }
     GetAcquaint(apiKey: string, Listreff: string) {
-        return this.api.get(`?path=${ApiService.urls.GetAcquaint()}?key=${apiKey}&id=${Listreff}`);
+        return this.directApi.get(`${ApiService.urls.GetAcquaint()}?key=${apiKey}&id=${Listreff}`);
     }
     updateAgency(id: number, data: Partial<Agency>) {
         const token = this.getAuthToken();
 
-        return this.api.put(`?path=${ApiService.urls.UpdateAgency()}${id}`, data, {
+        return this.directApi.put(`${ApiService.urls.UpdateAgency()}${id}`, data, {
             headers: {
                 'token': token
             }
@@ -197,7 +174,7 @@ class ApiService {
     }
     async GetFieldMappings() {
         const token = this.getAuthToken();
-        const response = await this.api.get(`?path=${ApiService.urls.field_mappings()}`, {
+        const response = await this.directApi.get(ApiService.urls.field_mappings(), {
             headers: {
                 'token': token
             }
@@ -208,7 +185,7 @@ class ApiService {
     // Add Field Mapping CRUD
     addFieldMapping(data: any) {
         const token = this.getAuthToken();
-        return this.api.post(`?path=${ApiService.urls.field_mappings()}`, data, {
+        return this.directApi.post(ApiService.urls.field_mappings(), data, {
             headers: {
                 'token': token
             }
@@ -217,7 +194,7 @@ class ApiService {
 
     updateFieldMapping(id: number, data: any) {
         const token = this.getAuthToken();
-        return this.api.put(`?path=${ApiService.urls.field_mappings()}/${id}`, data, {
+        return this.directApi.put(`${ApiService.urls.field_mappings()}/${id}`, data, {
             headers: {
                 'token': token
             }
@@ -226,7 +203,7 @@ class ApiService {
 
     deleteFieldMapping(id: number) {
         const token = this.getAuthToken();
-        return this.api.delete(`?path=${ApiService.urls.field_mappings()}/${id}`, {
+        return this.directApi.delete(`${ApiService.urls.field_mappings()}/${id}`, {
             headers: {
                 'token': token
             }
@@ -236,7 +213,7 @@ class ApiService {
     // Add recount properties endpoints
     recountAllAgencyProperties() {
         const token = this.getAuthToken();
-        return this.api.post('?path=/agencies/recount-properties', {}, {
+        return this.directApi.post('/agencies/recount-properties', {}, {
             headers: {
                 'token': token
             }
@@ -245,7 +222,7 @@ class ApiService {
 
     recountAgencyProperties(id: number) {
         const token = this.getAuthToken();
-        return this.api.post(`?path=/agencies/${id}/recount-properties`, {}, {
+        return this.directApi.post(`/agencies/${id}/recount-properties`, {}, {
             headers: {
                 'token': token
             }
@@ -255,7 +232,7 @@ class ApiService {
     // Add method to refresh agencies
     refreshAgencies() {
         const token = this.getAuthToken();
-        return this.api.post('?path=/agencies/refresh', {}, {
+        return this.directApi.post('/agencies/refresh', {}, {
             headers: {
                 'token': token
             }
@@ -264,7 +241,7 @@ class ApiService {
 
     // Add this method to fetch all Daft properties
     getAllDaftProperties(apiKey: string) {
-        return this.api.get(`?path=/api/daft/all`, {
+        return this.directApi.get('/api/daft/all', {
             headers: {
                 'apiKey': apiKey
             }
@@ -279,7 +256,7 @@ class ApiService {
     // Add agency creation endpoint
     createAgency(data: Partial<Agency>) {
         const token = this.getAuthToken();
-        return this.api.post(`?path=${ApiService.urls.agencies()}`, data, {
+        return this.directApi.post(ApiService.urls.agencies(), data, {
             headers: {
                 'token': token
             }
