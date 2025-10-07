@@ -120,9 +120,9 @@ export class SyncService {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const proxyUrl = `${supabaseUrl}/functions/v1/api-proxy?path=/api/properties?Key=${agencyKey}`;
+      const syncUrl = `${supabaseUrl}/functions/v1/sync-properties?key=${encodeURIComponent(agencyKey)}`;
 
-      const response = await fetch(proxyUrl, {
+      const response = await fetch(syncUrl, {
         headers: {
           'Authorization': `Bearer ${supabaseKey}`,
           'apikey': supabaseKey,
@@ -130,47 +130,13 @@ export class SyncService {
       });
 
       if (!response.ok) {
-        console.error(`Failed to fetch properties for ${agencyKey}: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error(`Failed to sync properties for ${agencyKey}: ${response.status}`, errorData);
         return;
       }
 
-      const properties = await response.json();
-
-      if (!Array.isArray(properties) || properties.length === 0) {
-        return;
-      }
-
-      const { data: agency } = await supabase
-        .from('agencies')
-        .select('name')
-        .eq('unique_key', agencyKey)
-        .maybeSingle();
-
-      if (!agency) {
-        return;
-      }
-
-      for (const property of properties) {
-        const propertyData = {
-          agency_name: agency.name,
-          house_location: property.Address || '',
-          house_price: property.Price || 0,
-          house_bedrooms: property.BedRooms || 0,
-          house_bathrooms: property.BathRooms || 0,
-          images_url_house: property.PrimaryImage || null,
-          house_extra_info_1: property.Type || null,
-          house_extra_info_2: property.Status || null,
-          house_extra_info_3: property.ShortDescription || null,
-          agency_agent_name: property.Agent || null,
-        };
-
-        await supabase
-          .from('properties')
-          .upsert(propertyData, {
-            onConflict: 'agency_name,house_location',
-            ignoreDuplicates: false
-          });
-      }
+      const result = await response.json();
+      console.log(`Synced ${result.inserted} properties for agency ${result.agency}`);
     } catch (error) {
       console.error('Failed to sync properties:', error);
     }
