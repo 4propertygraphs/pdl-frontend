@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import apiService from '../services/ApiService'; // Gebruik de instantie, niet Axios zelf
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -11,16 +10,13 @@ function Login() {
         e.preventDefault();
         setError(null);
 
-        try {
-            const response = await apiService.login(email, password); // Gebruik apiService hier
-            const token = response.data.token;
-
-
-            localStorage.setItem('token', token);
+        // Mock authentication - for development/testing
+        if (email === 'admin@example.com' && password === 'password123') {
+            // Set a mock token
+            localStorage.setItem('token', 'mock-token-12345');
             window.location.href = `${basePath}`;
-        } catch (err) {
-            console.error('Login failed:', err);
-            setError('Invalid username or password');
+        } else {
+            setError('Invalid username or password. Use: admin@example.com / password123');
         }
     };
 
@@ -39,7 +35,7 @@ function Login() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder='example@gmail.com'
+                            placeholder='admin@example.com'
                             className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-300"
                             required
                         />
@@ -53,7 +49,7 @@ function Login() {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder='test1234'
+                            placeholder='password123'
                             className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-300"
                             required
                         />

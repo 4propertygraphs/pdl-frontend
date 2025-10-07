@@ -1,8 +1,10 @@
 import axios, { AxiosInstance } from 'axios';
 import { Agency } from '../interfaces/Models';
+import { mockAgencies, mockFieldMappings, getPropertiesByAgencyKey } from '../data/mockData';
 
 class ApiService {
     private api: AxiosInstance;
+    private useMockData = true; // Toggle to switch between mock and real API
 
     constructor() {
         const baseURL = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:3000/api';
@@ -35,6 +37,9 @@ class ApiService {
 
 
     getProperties(key: string) {
+        if (this.useMockData) {
+            return Promise.resolve({ data: getPropertiesByAgencyKey(key) });
+        }
         return this.api.get(ApiService.urls.properties(), {
             headers: {
                 'key': key
@@ -43,6 +48,9 @@ class ApiService {
     }
 
     getAgencies() {
+        if (this.useMockData) {
+            return Promise.resolve({ data: mockAgencies });
+        }
         const token = this.getAuthToken();
         return this.api.get(ApiService.urls.agencies(), {
             headers: {
@@ -96,6 +104,9 @@ class ApiService {
         });
     }
     GetFieldMappings() {
+        if (this.useMockData) {
+            return Promise.resolve({ data: mockFieldMappings });
+        }
         const token = this.getAuthToken();
         return this.api.get(ApiService.urls.field_mappings(), {
             headers: {
