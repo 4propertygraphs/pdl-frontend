@@ -139,7 +139,7 @@ function Agencies() {
         // Filter agencies based on search text and source filters
         const agenciesArray = Array.isArray(agencies) ? agencies : [];
         let filtered = agenciesArray.filter((agency) =>
-            agency.name.toLowerCase().includes(searchText.toLowerCase())
+            agency.name?.toLowerCase().includes(searchText.toLowerCase())
         );
 
         if (sourceFilters.length > 0) {
