@@ -6,11 +6,8 @@ class ApiService {
     private directApi: AxiosInstance;
 
     constructor() {
-        const proxyUrl = 'http://splnv0r8uf:fVpo8l~6phsiX6Vg2A@gate.decodo.com:7000';
-        const targetUrl = 'https://api.stefanmars.nl';
-
         this.directApi = axios.create({
-            baseURL: `${proxyUrl}/${targetUrl}`,
+            baseURL: 'https://api.stefanmars.nl',
         });
     }
 
