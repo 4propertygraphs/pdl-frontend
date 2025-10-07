@@ -1,6 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
 import { Agency } from '../interfaces/Models';
-import { supabase } from '../lib/supabase';
 import { cacheService } from './CacheService';
 
 class ApiService {
@@ -183,13 +182,13 @@ class ApiService {
         });
     }
     async GetFieldMappings() {
-        const { data, error } = await supabase
-            .from('field_mappings')
-            .select('*');
-
-        if (error) throw error;
-
-        return { data };
+        const token = this.getAuthToken();
+        const response = await this.api.get(`?path=${ApiService.urls.field_mappings()}`, {
+            headers: {
+                'token': token
+            }
+        });
+        return { data: response.data };
     }
 
     // Add Field Mapping CRUD
