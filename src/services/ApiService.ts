@@ -29,17 +29,17 @@ class ApiService {
     // URL utility functions
     static urls = {
 
-        properties: () => '/properties',
-        GetMyHome: () => '/myhome',
-        GetAcquaint: () => '/acquaint',
-        GetDaft: () => '/daft', //change to /daft
-        field_mappings: () => '/field_mappings',
+        properties: () => '/api/properties',
+        GetMyHome: () => '/api/myhome',
+        GetAcquaint: () => '/api/acquaint',
+        GetDaft: () => '/api/daft',
+        field_mappings: () => '/api/field_mappings',
 
-        agencies: () => '/agencies',
-        agency: () => '/agency/',
-        verifyToken: () => '/verify_token',
-        login: () => '/login',
-        UpdateAgency: () => '/agencies/',
+        agencies: () => '/api/agencies',
+        agency: () => '/api/agency/',
+        verifyToken: () => '/api/verify_token',
+        login: () => '/api/login',
+        UpdateAgency: () => '/api/agencies/',
     };
 
 
