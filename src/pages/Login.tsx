@@ -38,7 +38,7 @@ function Login() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder='test@bec.ie'
+                            placeholder='tech@4pm.ie'
                             className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-300"
                             required
                         />
