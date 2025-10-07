@@ -1,8 +1,11 @@
+import { supabase } from '../lib/supabase';
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 export class SyncService {
   private static syncInterval: number | null = null;
   private static lastSync: Date | null = null;
+  private static isInitialized = false;
 
   static async syncAgencies(): Promise<void> {
     try {
@@ -17,6 +20,7 @@ export class SyncService {
       const result = await response.json();
       console.log('Agencies synced:', result);
       this.lastSync = new Date();
+      return result;
     } catch (error) {
       console.error('Failed to sync agencies:', error);
       throw error;
@@ -38,14 +42,59 @@ export class SyncService {
 
       const result = await response.json();
       console.log('Properties synced:', result);
+      return result;
     } catch (error) {
       console.error('Failed to sync properties:', error);
       throw error;
     }
   }
 
+  static async syncAllProperties(): Promise<void> {
+    const { data: agencies, error } = await supabase
+      .from('agencies')
+      .select('unique_key')
+      .not('unique_key', 'is', null);
+
+    if (error) {
+      console.error('Failed to fetch agencies for sync:', error);
+      return;
+    }
+
+    console.log(`Syncing properties for ${agencies.length} agencies...`);
+
+    for (const agency of agencies) {
+      if (agency.unique_key) {
+        try {
+          await this.syncPropertiesForAgency(agency.unique_key);
+        } catch (error) {
+          console.error(`Failed to sync properties for agency ${agency.unique_key}:`, error);
+        }
+      }
+    }
+  }
+
   static async syncAll(): Promise<void> {
+    console.log('Starting full sync...');
     await this.syncAgencies();
+    await this.syncAllProperties();
+    console.log('Full sync completed');
+  }
+
+  static async checkAndInitialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
+    const { count } = await supabase
+      .from('agencies')
+      .select('*', { count: 'exact', head: true });
+
+    if (count === 0) {
+      console.log('Database empty, performing initial sync...');
+      await this.syncAll();
+    }
+
+    this.isInitialized = true;
   }
 
   static startAutoSync(intervalHours: number = 1): void {

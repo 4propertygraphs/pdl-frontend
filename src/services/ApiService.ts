@@ -1,11 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
 import { Agency } from '../interfaces/Models';
-import { mockAgencies, mockFieldMappings, getPropertiesByAgencyKey } from '../data/mockData';
 import { supabase } from '../lib/supabase';
 
 class ApiService {
     private api: AxiosInstance;
-    private useMockData = false; // Toggle to switch between mock and real API
     private proxyUrl: string;
 
     constructor() {
@@ -46,10 +44,6 @@ class ApiService {
 
 
     async getProperties(key: string) {
-        if (this.useMockData) {
-            return Promise.resolve({ data: getPropertiesByAgencyKey(key) });
-        }
-
         const { data: agency } = await supabase
             .from('agencies')
             .select('name')
@@ -57,9 +51,7 @@ class ApiService {
             .maybeSingle();
 
         if (!agency) {
-            return this.api.get(`?path=${ApiService.urls.properties()}`, {
-                headers: { 'key': key }
-            });
+            throw new Error('Agency not found');
         }
 
         const { data, error } = await supabase
@@ -70,26 +62,32 @@ class ApiService {
         if (error) throw error;
 
         return { data: data.map(prop => ({
+            Id: prop.id,
             ParentId: prop.id.toString(),
-            PrimaryImage: prop.images_url_house,
-            Type: prop.house_extra_info_1,
-            Status: prop.house_extra_info_2,
-            ShortDescription: prop.house_extra_info_3,
+            Address: prop.house_location,
+            Propertymarket: prop.house_extra_info_1 || 'Residential',
+            PrimaryImage: prop.images_url_house || '',
+            Type: prop.house_extra_info_1 || '',
+            Status: prop.house_extra_info_2 || '',
+            ShortDescription: prop.house_extra_info_3 || '',
             Price: prop.house_price,
             Agent: prop.agency_agent_name,
             Office: prop.agency_name,
+            OfficeAddress: '',
             CountyCityName: prop.house_location,
             BedRooms: prop.house_bedrooms,
             BathRooms: prop.house_bathrooms,
-            FloorArea: prop.house_mt_squared,
+            GPS: {
+                Latitude: 0,
+                Longitude: 0,
+                Zoom: 0
+            },
+            Created: prop.created_at || '',
+            Modified: prop.created_at || ''
         })) };
     }
 
     async getAgencies() {
-        if (this.useMockData) {
-            return Promise.resolve({ data: mockAgencies });
-        }
-
         const { data, error } = await supabase
             .from('agencies')
             .select('*')
@@ -157,16 +155,14 @@ class ApiService {
             }
         });
     }
-    GetFieldMappings() {
-        if (this.useMockData) {
-            return Promise.resolve({ data: mockFieldMappings });
-        }
-        const token = this.getAuthToken();
-        return this.api.get(`?path=${ApiService.urls.field_mappings()}`, {
-            headers: {
-                'token': token
-            }
-        });
+    async GetFieldMappings() {
+        const { data, error } = await supabase
+            .from('field_mappings')
+            .select('*');
+
+        if (error) throw error;
+
+        return { data };
     }
 
     // Add Field Mapping CRUD
