@@ -155,15 +155,24 @@ export class SyncService {
 
     console.log(`Syncing properties for ${agencies.length} agencies...`);
 
+    let succeeded = 0;
+    let failed = 0;
+
     for (const agency of agencies) {
       if (agency.unique_key) {
         try {
           await this.syncPropertiesForAgency(agency.unique_key);
+          succeeded++;
+          // Add 2 second delay between requests to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (error) {
           console.error(`Failed to sync properties for agency ${agency.unique_key}:`, error);
+          failed++;
         }
       }
     }
+
+    console.log(`Sync completed: ${succeeded} succeeded, ${failed} failed`);
   }
 
   static async syncAll(): Promise<void> {

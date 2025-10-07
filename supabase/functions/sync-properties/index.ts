@@ -50,15 +50,46 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Fetch properties from 4PM API
+    // Fetch properties from 4PM API with timeout
     const apiUrl = `https://api2.4pm.ie/api/property/json?Key=${agencyKey}`;
-    const response = await fetch(apiUrl);
-    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        signal: controller.signal,
+      });
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw new Error(`API connection failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+    }
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       throw new Error(`API returned ${response.status}`);
     }
 
     const properties = await response.json();
+
+    if (!Array.isArray(properties) || properties.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          agency: agency.name,
+          total: 0,
+          inserted: 0,
+          errors: 0,
+          message: `No properties found for ${agency.name}`
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
 
     // Delete old properties for this agency
     await supabase

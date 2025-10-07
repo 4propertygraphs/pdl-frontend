@@ -349,7 +349,7 @@ function Agencies() {
     };
 
     const handleSyncProperties = async () => {
-        if (!window.confirm("This will sync all properties from the API. Continue?")) {
+        if (!window.confirm("This will sync all properties from the API. This may take several minutes. Continue?")) {
             return;
         }
         setSyncPropertiesError(null);
@@ -357,9 +357,9 @@ function Agencies() {
         try {
             await SyncService.syncAllProperties();
             await refreshAgencies();
-            alert('Properties synced successfully!');
+            alert('Properties sync completed! Check console for details.');
         } catch (error: any) {
-            setSyncPropertiesError("Failed to sync properties. Please try again.");
+            setSyncPropertiesError("Sync completed with errors. Check console.");
             console.error('Error syncing properties:', error);
         } finally {
             setSyncPropertiesLoading(false);
