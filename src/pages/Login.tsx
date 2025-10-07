@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import apiService from '../services/ApiService';
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -10,13 +11,15 @@ function Login() {
         e.preventDefault();
         setError(null);
 
-        // Mock authentication - for development/testing
-        if (email === 'admin@example.com' && password === 'password123') {
-            // Set a mock token
-            localStorage.setItem('token', 'mock-token-12345');
+        try {
+            const response = await apiService.login(email, password);
+            const token = response.data.token;
+
+            localStorage.setItem('token', token);
             window.location.href = `${basePath}`;
-        } else {
-            setError('Invalid username or password. Use: admin@example.com / password123');
+        } catch (err) {
+            console.error('Login failed:', err);
+            setError('Invalid username or password');
         }
     };
 
@@ -35,7 +38,7 @@ function Login() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder='admin@example.com'
+                            placeholder='test@bec.ie'
                             className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-300"
                             required
                         />
@@ -49,7 +52,7 @@ function Login() {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder='password123'
+                            placeholder='Sessword'
                             className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-300"
                             required
                         />

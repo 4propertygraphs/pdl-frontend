@@ -4,10 +4,10 @@ import { mockAgencies, mockFieldMappings, getPropertiesByAgencyKey } from '../da
 
 class ApiService {
     private api: AxiosInstance;
-    private useMockData = true; // Toggle to switch between mock and real API
+    private useMockData = false; // Toggle to switch between mock and real API
 
     constructor() {
-        const baseURL = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:3000/api';
+        const baseURL = import.meta.env.VITE_REACT_APP_API_URL || 'https://api.stefanmars.nl/api';
         this.api = axios.create({
             baseURL,
         });
@@ -76,10 +76,7 @@ class ApiService {
     }
 
     login(email: string, password: string) {
-        // Use root URL for login endpoint by removing /api from baseURL
-        const baseURL = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:3000/api';
-        const rootURL = baseURL.replace('/api', '');
-        return axios.post(rootURL + ApiService.urls.login(), { email, password });
+        return this.api.post(ApiService.urls.login(), { email, password });
     }
 
 
