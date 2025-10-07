@@ -5,11 +5,19 @@ import { mockAgencies, mockFieldMappings, getPropertiesByAgencyKey } from '../da
 class ApiService {
     private api: AxiosInstance;
     private useMockData = false; // Toggle to switch between mock and real API
+    private proxyUrl: string;
 
     constructor() {
-        const baseURL = import.meta.env.VITE_REACT_APP_API_URL || 'https://api.stefanmars.nl/api';
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        this.proxyUrl = `${supabaseUrl}/functions/v1/api-proxy`;
+
         this.api = axios.create({
-            baseURL,
+            baseURL: this.proxyUrl,
+            headers: {
+                'Authorization': `Bearer ${supabaseKey}`,
+                'apikey': supabaseKey,
+            },
         });
     }
 
@@ -40,7 +48,7 @@ class ApiService {
         if (this.useMockData) {
             return Promise.resolve({ data: getPropertiesByAgencyKey(key) });
         }
-        return this.api.get(ApiService.urls.properties(), {
+        return this.api.get(`?path=${ApiService.urls.properties()}`, {
             headers: {
                 'key': key
             }
@@ -52,7 +60,7 @@ class ApiService {
             return Promise.resolve({ data: mockAgencies });
         }
         const token = this.getAuthToken();
-        return this.api.get(ApiService.urls.agencies(), {
+        return this.api.get(`?path=${ApiService.urls.agencies()}`, {
             headers: {
                 'token': token
             }
@@ -76,25 +84,23 @@ class ApiService {
     }
 
     login(email: string, password: string) {
-        return this.api.post(ApiService.urls.login(), { email, password });
+        return this.api.post(`?path=${ApiService.urls.login()}`, { email, password });
     }
 
 
     getMyHome(apiKey: string, Listreff: string) {
-        return this.api.get(ApiService.urls.GetMyHome() + `?key=${apiKey}&id=${Listreff}`);
-
+        return this.api.get(`?path=${ApiService.urls.GetMyHome()}?key=${apiKey}&id=${Listreff}`);
     }
     getDaft(apiKey: string, Listreff: string) {
-        return this.api.get(ApiService.urls.GetDaft() + `?key=${apiKey}&id=${Listreff}`);
-
+        return this.api.get(`?path=${ApiService.urls.GetDaft()}?key=${apiKey}&id=${Listreff}`);
     }
     GetAcquaint(apiKey: string, Listreff: string) {
-        return this.api.get(ApiService.urls.GetAcquaint() + `?key=${apiKey}&id=${Listreff}`);
+        return this.api.get(`?path=${ApiService.urls.GetAcquaint()}?key=${apiKey}&id=${Listreff}`);
     }
     updateAgency(id: number, data: Partial<Agency>) {
         const token = this.getAuthToken();
 
-        return this.api.put(ApiService.urls.UpdateAgency() + id, data, {
+        return this.api.put(`?path=${ApiService.urls.UpdateAgency()}${id}`, data, {
             headers: {
                 'token': token
             }
@@ -105,7 +111,7 @@ class ApiService {
             return Promise.resolve({ data: mockFieldMappings });
         }
         const token = this.getAuthToken();
-        return this.api.get(ApiService.urls.field_mappings(), {
+        return this.api.get(`?path=${ApiService.urls.field_mappings()}`, {
             headers: {
                 'token': token
             }
@@ -115,7 +121,7 @@ class ApiService {
     // Add Field Mapping CRUD
     addFieldMapping(data: any) {
         const token = this.getAuthToken();
-        return this.api.post(ApiService.urls.field_mappings(), data, {
+        return this.api.post(`?path=${ApiService.urls.field_mappings()}`, data, {
             headers: {
                 'token': token
             }
@@ -124,7 +130,7 @@ class ApiService {
 
     updateFieldMapping(id: number, data: any) {
         const token = this.getAuthToken();
-        return this.api.put(`${ApiService.urls.field_mappings()}/${id}`, data, {
+        return this.api.put(`?path=${ApiService.urls.field_mappings()}/${id}`, data, {
             headers: {
                 'token': token
             }
@@ -133,7 +139,7 @@ class ApiService {
 
     deleteFieldMapping(id: number) {
         const token = this.getAuthToken();
-        return this.api.delete(`${ApiService.urls.field_mappings()}/${id}`, {
+        return this.api.delete(`?path=${ApiService.urls.field_mappings()}/${id}`, {
             headers: {
                 'token': token
             }
@@ -143,7 +149,7 @@ class ApiService {
     // Add recount properties endpoints
     recountAllAgencyProperties() {
         const token = this.getAuthToken();
-        return this.api.post('/agencies/recount-properties', {}, {
+        return this.api.post('?path=/agencies/recount-properties', {}, {
             headers: {
                 'token': token
             }
@@ -152,7 +158,7 @@ class ApiService {
 
     recountAgencyProperties(id: number) {
         const token = this.getAuthToken();
-        return this.api.post(`/agencies/${id}/recount-properties`, {}, {
+        return this.api.post(`?path=/agencies/${id}/recount-properties`, {}, {
             headers: {
                 'token': token
             }
@@ -162,7 +168,7 @@ class ApiService {
     // Add method to refresh agencies
     refreshAgencies() {
         const token = this.getAuthToken();
-        return this.api.post('/agencies/refresh', {}, {
+        return this.api.post('?path=/agencies/refresh', {}, {
             headers: {
                 'token': token
             }
@@ -171,7 +177,7 @@ class ApiService {
 
     // Add this method to fetch all Daft properties
     getAllDaftProperties(apiKey: string) {
-        return this.api.get('/daft/all', { params: { apiKey } });
+        return this.api.get(`?path=/daft/all&apiKey=${apiKey}`);
     }
 
     // Remove this method to fetch all Acquaint properties
@@ -182,7 +188,7 @@ class ApiService {
     // Add agency creation endpoint
     createAgency(data: Partial<Agency>) {
         const token = this.getAuthToken();
-        return this.api.post(ApiService.urls.agencies(), data, {
+        return this.api.post(`?path=${ApiService.urls.agencies()}`, data, {
             headers: {
                 'token': token
             }
