@@ -44,107 +44,90 @@ class ApiService {
 
 
     async getProperties(key: string) {
-        try {
-            const response = await fetch('https://api.stefanmars.nl/api/properties', {
-                headers: {
-                    'key': key,
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error(`API returned ${response.status}`);
+        const response = await this.api.get(`?path=${ApiService.urls.properties()}`, {
+            headers: {
+                'key': key
             }
+        });
 
-            const properties = await response.json();
+        const properties = response.data;
 
-            if (!Array.isArray(properties)) {
-                throw new Error('Invalid response format');
-            }
-
-            return {
-                data: properties.map(prop => ({
-                    Id: prop.Id || prop.id,
-                    ParentId: prop.ParentId,
-                    Address: prop.CountyCityName || prop.ShortDescription || 'Unknown',
-                    Propertymarket: prop.Type || 'Residential',
-                    PrimaryImage: prop.PrimaryImage || '',
-                    Type: prop.Type || '',
-                    Status: prop.Status || '',
-                    ShortDescription: prop.ShortDescription || '',
-                    Price: prop.Price || '0',
-                    Agent: prop.Agent || 'Unknown',
-                    Office: prop.Office || '',
-                    OfficeAddress: prop.OfficeAddress || '',
-                    CountyCityName: prop.CountyCityName || '',
-                    BedRooms: parseInt(prop.BedRooms) || 0,
-                    BathRooms: parseInt(prop.BathRooms) || 0,
-                    Size: prop.FloorArea || '0',
-                    SizeInAcres: prop.SizeInAcres || '',
-                    GPS: prop.GPS || {
-                        Latitude: 0,
-                        Longitude: 0,
-                        Zoom: 0
-                    },
-                    Created: prop.Created || '',
-                    Modified: prop.Modified || '',
-                    Pics: prop.Pics || []
-                }))
-            };
-        } catch (error) {
-            console.error('Failed to fetch properties:', error);
-            throw error;
+        if (!Array.isArray(properties)) {
+            throw new Error('Invalid response format');
         }
+
+        return {
+            data: properties.map(prop => ({
+                Id: prop.Id || prop.id,
+                ParentId: prop.ParentId,
+                Address: prop.CountyCityName || prop.ShortDescription || 'Unknown',
+                Propertymarket: prop.Type || 'Residential',
+                PrimaryImage: prop.PrimaryImage || '',
+                Type: prop.Type || '',
+                Status: prop.Status || '',
+                ShortDescription: prop.ShortDescription || '',
+                Price: prop.Price || '0',
+                Agent: prop.Agent || 'Unknown',
+                Office: prop.Office || '',
+                OfficeAddress: prop.OfficeAddress || '',
+                CountyCityName: prop.CountyCityName || '',
+                BedRooms: parseInt(prop.BedRooms) || 0,
+                BathRooms: parseInt(prop.BathRooms) || 0,
+                Size: prop.FloorArea || '0',
+                SizeInAcres: prop.SizeInAcres || '',
+                Beds: prop.Beds || prop.BedRooms || 0,
+                GPS: prop.GPS || {
+                    Latitude: 0,
+                    Longitude: 0,
+                    Zoom: 0
+                },
+                Created: prop.Created || '',
+                Modified: prop.Modified || '',
+                Pics: prop.Pics || []
+            }))
+        };
     }
 
     async getAgencies() {
-        try {
-            const token = this.getAuthToken();
-            if (!token) {
-                throw new Error('No authentication token found');
-            }
-
-            const response = await fetch('https://api.stefanmars.nl/api/agencies', {
-                headers: {
-                    'token': token,
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error(`API returned ${response.status}`);
-            }
-
-            const agencies = await response.json();
-
-            if (!Array.isArray(agencies)) {
-                throw new Error('Invalid response format');
-            }
-
-            return {
-                data: agencies.map(agency => ({
-                    id: agency.Id || agency.id,
-                    name: agency.Name || agency.name,
-                    address: agency.Address1 || '',
-                    address2: agency.Address2 || '',
-                    logo: agency.Logo,
-                    site_name: agency.AcquiantCustomer?.SiteName || agency.site_name,
-                    acquaint_site_prefix: agency.AcquiantCustomer?.SitePrefix || agency.acquaint_site_prefix,
-                    myhome_api_key: agency.MyhomeApi?.ApiKey || agency.myhome_api_key,
-                    myhome_group_id: agency.MyhomeApi?.GroupID || agency.myhome_group_id,
-                    daft_api_key: agency.DaftApiKey || agency.daft_api_key,
-                    fourpm_branch_id: agency.AcquiantCustomer?.FourPMBranchID || agency.fourpm_branch_id,
-                    unique_key: agency.Key || agency.unique_key,
-                    office_name: agency.OfficeName || agency.office_name,
-                    ghl_id: agency.ghl_id,
-                    whmcs_id: agency.whmcs_id,
-                    primary_source: agency.primary_source,
-                    total_properties: agency.total_properties || 0,
-                    site: agency.Site || agency.site || ''
-                }))
-            };
-        } catch (error) {
-            console.error('Failed to fetch agencies:', error);
-            throw error;
+        const token = this.getAuthToken();
+        if (!token) {
+            throw new Error('No authentication token found');
         }
+
+        const response = await this.api.get(`?path=${ApiService.urls.agencies()}`, {
+            headers: {
+                'token': token
+            }
+        });
+
+        const agencies = response.data;
+
+        if (!Array.isArray(agencies)) {
+            throw new Error('Invalid response format');
+        }
+
+        return {
+            data: agencies.map(agency => ({
+                id: agency.Id || agency.id,
+                name: agency.Name || agency.name,
+                address: agency.Address1 || '',
+                address2: agency.Address2 || '',
+                logo: agency.Logo,
+                site_name: agency.AcquiantCustomer?.SiteName || agency.site_name,
+                acquaint_site_prefix: agency.AcquiantCustomer?.SitePrefix || agency.acquaint_site_prefix,
+                myhome_api_key: agency.MyhomeApi?.ApiKey || agency.myhome_api_key,
+                myhome_group_id: agency.MyhomeApi?.GroupID || agency.myhome_group_id,
+                daft_api_key: agency.DaftApiKey || agency.daft_api_key,
+                fourpm_branch_id: agency.AcquiantCustomer?.FourPMBranchID || agency.fourpm_branch_id,
+                unique_key: agency.Key || agency.unique_key,
+                office_name: agency.OfficeName || agency.office_name,
+                ghl_id: agency.ghl_id,
+                whmcs_id: agency.whmcs_id,
+                primary_source: agency.primary_source,
+                total_properties: agency.total_properties || 0,
+                site: agency.Site || agency.site || ''
+            }))
+        };
     }
 
     getAgency(key: string) {
