@@ -47,8 +47,16 @@ export class SyncService {
 
     this.isSyncing = true;
     try {
-      const apiUrl = "https://api2.4pm.ie/api/Agency/GetAgency?Key=RDlaeFVPN004a0hvJTJmWUJIQTN3TVdnJTNkJTNk0";
-      const response = await fetch(apiUrl);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const proxyUrl = `${supabaseUrl}/functions/v1/api-proxy?path=/api/Agency/GetAgency?Key=RDlaeFVPN004a0hvJTJmWUJIQTN3TVdnJTNkJTNk0`;
+
+      const response = await fetch(proxyUrl, {
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'apikey': supabaseKey,
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`);
@@ -110,8 +118,16 @@ export class SyncService {
 
   static async syncPropertiesForAgency(agencyKey: string): Promise<void> {
     try {
-      const apiUrl = `https://api2.4pm.ie/api/properties?Key=${agencyKey}`;
-      const response = await fetch(apiUrl);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const proxyUrl = `${supabaseUrl}/functions/v1/api-proxy?path=/api/properties?Key=${agencyKey}`;
+
+      const response = await fetch(proxyUrl, {
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'apikey': supabaseKey,
+        }
+      });
 
       if (!response.ok) {
         console.error(`Failed to fetch properties for ${agencyKey}: ${response.status}`);
