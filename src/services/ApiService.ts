@@ -60,7 +60,7 @@ class ApiService {
             data: properties.map(prop => ({
                 Id: prop.Id || prop.id,
                 ParentId: prop.ParentId,
-                Address: prop.CountyCityName || prop.ShortDescription || 'Unknown',
+                Address: prop.Address || prop.ShortDescription || prop.CountyCityName || 'Unknown',
                 Propertymarket: prop.Type || 'Residential',
                 PrimaryImage: prop.PrimaryImage || '',
                 Type: prop.Type || '',
@@ -83,7 +83,12 @@ class ApiService {
                 },
                 Created: prop.Created || '',
                 Modified: prop.Modified || '',
-                Pics: prop.Pics || []
+                Pics: prop.Pics || [],
+                ListReff: prop.ListReff || prop.Id || prop.id,
+                acquaintsiteprefix: prop.acquaintsiteprefix || '',
+                FullAddress: prop.FullAddress || prop.Address || '',
+                Description: prop.Description || '',
+                Features: prop.Features || []
             }))
         };
     }
@@ -238,7 +243,11 @@ class ApiService {
 
     // Add this method to fetch all Daft properties
     getAllDaftProperties(apiKey: string) {
-        return this.api.get(`?path=/daft/all&apiKey=${apiKey}`);
+        return this.api.get(`?path=/api/daft/all`, {
+            headers: {
+                'apiKey': apiKey
+            }
+        });
     }
 
     // Remove this method to fetch all Acquaint properties

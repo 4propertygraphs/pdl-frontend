@@ -3,7 +3,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, token, key",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, token, key, apiKey",
 };
 
 Deno.serve(async (req: Request) => {
@@ -38,6 +38,12 @@ Deno.serve(async (req: Request) => {
     if (key) {
       headers['key'] = key;
       console.log('Key header found');
+    }
+
+    const apiKey = req.headers.get('apiKey');
+    if (apiKey) {
+      headers['apiKey'] = apiKey;
+      console.log('ApiKey header found');
     }
 
     let body = null;
