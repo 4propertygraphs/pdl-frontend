@@ -163,13 +163,13 @@ export class SyncService {
           console.log(`Syncing properties for agency ${succeeded + 1}/${agencies.length}...`);
           await this.syncPropertiesForAgency(agency.unique_key);
           succeeded++;
-          // Add 5 second delay between requests to avoid overwhelming the API
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          // Add 10 second delay between requests to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 10000));
         } catch (error) {
           console.error(`Failed to sync properties for agency ${agency.unique_key}:`, error);
           failed++;
           // Still wait a bit before next attempt even on failure
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise(resolve => setTimeout(resolve, 5000));
         }
       }
     }

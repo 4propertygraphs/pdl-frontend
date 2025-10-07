@@ -53,14 +53,40 @@ Deno.serve(async (req: Request) => {
     // Fetch properties from API using key header
     const apiUrl = 'https://api.stefanmars.nl/api/properties';
 
-    const response = await fetch(apiUrl, {
-      headers: {
-        'key': agencyKey,
-      }
-    });
+    let response;
+    let retries = 3;
+    let lastError;
 
-    if (!response.ok) {
-      throw new Error(`API returned ${response.status}: ${await response.text()}`);
+    for (let i = 0; i < retries; i++) {
+      try {
+        response = await fetch(apiUrl, {
+          headers: {
+            'key': agencyKey,
+          },
+          signal: AbortSignal.timeout(30000),
+        });
+
+        if (response.ok) {
+          break;
+        }
+
+        if (response.status === 404 || response.status === 401 || response.status === 403) {
+          throw new Error(`API returned ${response.status}: Invalid or missing API key`);
+        }
+
+        lastError = new Error(`API returned ${response.status}`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      } catch (error) {
+        lastError = error;
+        if (i < retries - 1) {
+          console.log(`Retry ${i + 1}/${retries - 1} for agency ${agency.name}`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw lastError || new Error('Failed to fetch properties after retries');
     }
 
     const properties = await response.json();
