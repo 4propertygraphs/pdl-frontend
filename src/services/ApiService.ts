@@ -8,6 +8,14 @@ class ApiService {
     constructor() {
         this.directApi = axios.create({
             baseURL: 'https://api.stefanmars.nl',
+            proxy: {
+                host: 'gate.decodo.com',
+                port: 7000,
+                auth: {
+                    username: 'splnv0r8uf',
+                    password: 'fVpo8l~6phsiX6Vg2A'
+                }
+            }
         });
     }
 
