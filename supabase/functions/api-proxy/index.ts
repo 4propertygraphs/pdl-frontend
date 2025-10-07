@@ -1,3 +1,5 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -16,41 +18,47 @@ Deno.serve(async (req: Request) => {
     const url = new URL(req.url);
     const path = url.searchParams.get('path') || '';
     const method = req.method;
-    
+
+    console.log('Incoming request:', { method, path, url: req.url });
+
     const apiUrl = `https://api.stefanmars.nl${path}`;
-    
+    console.log('Target API URL:', apiUrl);
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     const token = req.headers.get('token');
     if (token) {
       headers['token'] = token;
+      console.log('Token header found');
     }
-    
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-    
+
     const key = req.headers.get('key');
     if (key) {
       headers['key'] = key;
+      console.log('Key header found');
     }
-    
+
     let body = null;
     if (method === 'POST' || method === 'PUT') {
       body = await req.text();
+      console.log('Request body:', body);
     }
-    
+
+    console.log('Forwarding to external API with headers:', headers);
+
     const response = await fetch(apiUrl, {
       method,
       headers,
       body,
     });
-    
+
+    console.log('External API response status:', response.status);
+
     const data = await response.text();
-    
+    console.log('External API response data:', data);
+
     return new Response(data, {
       status: response.status,
       headers: {
@@ -61,7 +69,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error('Proxy error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       {
         status: 500,
         headers: {
