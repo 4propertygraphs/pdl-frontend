@@ -1,0 +1,11 @@
+[functions.api-proxy]
+verify_jwt = false
+
+[functions.sync-agencies]
+verify_jwt = false
+
+[functions.sync-properties]
+verify_jwt = false
+
+[functions.get-info]
+verify_jwt = false
