@@ -109,9 +109,23 @@ class ApiService {
             }
         });
 
-        const agencies = response.data;
+        console.log('Raw response:', response);
+        console.log('Response data type:', typeof response.data);
+        console.log('Response data:', response.data);
+
+        let agencies = response.data;
+
+        if (typeof agencies === 'string') {
+            try {
+                agencies = JSON.parse(agencies);
+            } catch (e) {
+                console.error('Failed to parse agencies JSON:', e);
+                throw new Error('Invalid JSON response from API');
+            }
+        }
 
         if (!Array.isArray(agencies)) {
+            console.error('Agencies is not an array:', agencies);
             throw new Error('Invalid response format');
         }
 
