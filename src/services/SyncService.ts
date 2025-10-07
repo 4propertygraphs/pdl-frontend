@@ -47,14 +47,13 @@ export class SyncService {
 
     this.isSyncing = true;
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const proxyUrl = `${supabaseUrl}/functions/v1/api-proxy?path=/api/Agency/GetAgency?Key=RDlaeFVPN004a0hvJTJmWUJIQTN3TVdnJTNkJTNk0`;
+      // TODO: Add your API token here
+      const apiToken = 'YOUR_API_TOKEN_HERE';
+      const apiUrl = 'https://api.stefanmars.nl/api/agencies';
 
-      const response = await fetch(proxyUrl, {
+      const response = await fetch(apiUrl, {
         headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'apikey': supabaseKey,
+          'token': apiToken,
         }
       });
 
@@ -130,9 +129,13 @@ export class SyncService {
         return;
       }
 
-      // Fetch properties directly from API
-      const apiUrl = `https://api.stefanmars.nl/api/properties?Key=${agencyKey}`;
-      const response = await fetch(apiUrl);
+      // Fetch properties from API using agency's unique_key as API Key
+      const apiUrl = 'https://api.stefanmars.nl/api/properties';
+      const response = await fetch(apiUrl, {
+        headers: {
+          'key': agencyKey,
+        }
+      });
 
       if (!response.ok) {
         console.error(`API returned ${response.status} for agency ${agency.name}`);
